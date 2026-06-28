@@ -27,7 +27,9 @@
 
 *{ box-sizing: border-box; }
 html, body{
-  margin:0; padding:0; height:100%; width:100%;
+  margin:0; padding:0; width:100%;
+  height: 100vh;
+  height: 100dvh; /* tracks the real visible viewport on mobile, not the layout viewport */
   overflow:hidden;
   background: var(--charcoal);
   font-family: var(--font-ui);
@@ -125,6 +127,7 @@ body{
   position: relative;
   background: var(--charcoal);
   overflow: hidden;
+  min-height: 0; /* prevent grid blowout from the video/canvas intrinsic size */
 }
 #webcam{
   position:absolute; inset:0;
