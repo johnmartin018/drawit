@@ -9,7 +9,7 @@ class CanvasEngine {
    */
   constructor(canvas) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext("2d", { desynchronized: true });
+    this.ctx = canvas.getContext("2d");
 
     this.color = "#2B2825";
     this.brushSize = 6;
@@ -134,10 +134,14 @@ class CanvasEngine {
   // ---- history ---------------------------------------------------------
   _pushHistory() {
     if (this.canvas.width === 0 || this.canvas.height === 0) return;
-    const snap = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    this.undoStack.push(snap);
-    if (this.undoStack.length > this.maxHistory) this.undoStack.shift();
-    this._updateHistoryButtons();
+    try {
+      const snap = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      this.undoStack.push(snap);
+      if (this.undoStack.length > this.maxHistory) this.undoStack.shift();
+      this._updateHistoryButtons();
+    } catch (e) {
+      console.error("Could not snapshot canvas for history:", e);
+    }
   }
 
   undo() {
