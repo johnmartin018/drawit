@@ -114,7 +114,12 @@ class CanvasEngine {
     ctx.lineJoin = "round";
     // Brush size is authored in CSS-pixel terms; scale to the canvas's
     // actual device-pixel resolution so strokes look consistent at any DPR.
-    ctx.lineWidth = stroke.size * (this.canvas.width / this.canvas.clientWidth);
+    // Guard against a transient zero/invalid clientWidth (can happen during
+    // layout shifts on mobile) which would otherwise divide-by-zero into an
+    // effectively infinite line width that paints over the whole canvas.
+    const cw = this.canvas.clientWidth;
+    const scale = cw > 0 ? (this.canvas.width / cw) : 1;
+    ctx.lineWidth = Math.max(0.5, stroke.size * scale);
 
     if (stroke.erase) {
       ctx.globalCompositeOperation = "destination-out";
