@@ -82,8 +82,8 @@ export class HandTracker {
         audio: false
       });
     } catch (err) {
-      this.onStatus("error", "permission-denied");
-      throw err;
+      this.onStatus("error", err && err.name ? err.name : "camera-error");
+      throw err; // preserve original error (name, message) for the caller
     }
     this.video.srcObject = stream;
     await new Promise((resolve) => {

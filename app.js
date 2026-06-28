@@ -50,6 +50,7 @@ class App {
       await this.tracker.startCamera();
       this.tracker.start();
       document.getElementById("emptyState").style.display = "none";
+      document.getElementById("permissionError").hidden = true;
     } catch (err) {
       this._handleStartError(err);
     }
@@ -74,9 +75,48 @@ class App {
   }
 
   _handleStartError(err) {
-    const permEl = document.getElementById("permissionError");
-    permEl.hidden = false;
+    const name = err && err.name;
+    const isPermissionError =
+      name === "NotAllowedError" ||
+      name === "PermissionDeniedError" ||
+      name === "SecurityError";
+    const isNoCameraError = name === "NotFoundError" || name === "DevicesNotFoundError";
+    const isInUseError = name === "NotReadableError" || name === "TrackStartError";
+
     document.getElementById("emptyState").style.display = "none";
+
+    if (isPermissionError) {
+      document.getElementById("permissionErrorText").textContent =
+        "Camera access was blocked. Check your browser's site settings and reload to try again.";
+      document.getElementById("permissionError").hidden = false;
+      this._onStatus("error");
+      return;
+    }
+
+    if (isNoCameraError) {
+      document.getElementById("permissionErrorText").textContent =
+        "No camera was found on this device. Connect a camera and try again.";
+      document.getElementById("permissionError").hidden = false;
+      this._onStatus("error");
+      return;
+    }
+
+    if (isInUseError) {
+      document.getElementById("permissionErrorText").textContent =
+        "The camera couldn't be started — it may be in use by another app. Close other apps using the camera and try again.";
+      document.getElementById("permissionError").hidden = false;
+      this._onStatus("error");
+      return;
+    }
+
+    // Anything else (model failed to load, network hiccup, etc.) is NOT a
+    // permission problem — don't show the misleading "blocked" screen.
+    document.getElementById("emptyState").style.display = "flex";
+    document.getElementById("emptyStateText").innerHTML =
+      "Something went wrong starting the camera or model.<br>Click the status button above to retry.";
+    const reason = (err && err.message) ? err.message : "Couldn't start the camera or hand-tracking model.";
+    this._onStatus("error");
+    window.showToast(reason, 3200);
   }
 
   _onStatus(state, message) {
@@ -104,11 +144,6 @@ class App {
       case "error":
         dot.className = "dot";
         text.textContent = "Camera error";
-        if (message === "permission-denied") {
-          document.getElementById("permissionError").hidden = false;
-        } else if (message) {
-          window.showToast(message, 3200);
-        }
         break;
       case "paused":
         dot.className = "dot";
