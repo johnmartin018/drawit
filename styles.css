@@ -157,26 +157,6 @@ body{
   font-weight: 400;
 }
 
-.permission-error{
-  position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap: 16px; padding: 0 32px; text-align:center;
-  background: rgba(43,40,37,0.92);
-  color: var(--paper);
-  z-index: 12;
-}
-.permission-error p{ max-width: 320px; line-height:1.6; font-size: 14.5px; margin:0; color: rgba(250,247,242,0.85); }
-.ghost-btn{
-  background: transparent;
-  border: 1px solid rgba(250,247,242,0.4);
-  color: var(--paper);
-  border-radius: 999px;
-  padding: 9px 20px;
-  font-size: 13.5px; font-weight: 500;
-  transition: background .15s ease;
-}
-.ghost-btn:hover{ background: rgba(250,247,242,0.12); }
-
 /* Pinch gauge drawn on overlay canvas via JS, but a CSS cursor dot helper */
 .toast{
   position: fixed;

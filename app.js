@@ -50,18 +50,12 @@ class App {
       await this.tracker.startCamera();
       this.tracker.start();
       document.getElementById("emptyState").style.display = "none";
-      document.getElementById("permissionError").hidden = true;
     } catch (err) {
       this._handleStartError(err);
     }
   }
 
   _bindCameraControls() {
-    document.getElementById("retryCameraBtn").addEventListener("click", async () => {
-      document.getElementById("permissionError").hidden = true;
-      await this.start();
-    });
-
     document.getElementById("cameraToggleBtn").addEventListener("click", () => {
       if (this.tracker.running) {
         this.tracker.stop();
@@ -83,40 +77,20 @@ class App {
     const isNoCameraError = name === "NotFoundError" || name === "DevicesNotFoundError";
     const isInUseError = name === "NotReadableError" || name === "TrackStartError";
 
-    document.getElementById("emptyState").style.display = "none";
-
+    let message;
     if (isPermissionError) {
-      document.getElementById("permissionErrorText").textContent =
-        "Camera access was blocked. Check your browser's site settings and reload to try again.";
-      document.getElementById("permissionError").hidden = false;
-      this._onStatus("error");
-      return;
+      message = "Camera access is off.<br>Allow it in your browser's site settings, then click above to retry.";
+    } else if (isNoCameraError) {
+      message = "No camera found on this device.<br>Connect one and click above to retry.";
+    } else if (isInUseError) {
+      message = "Camera is in use by another app.<br>Close it and click above to retry.";
+    } else {
+      message = "Couldn't start the camera or hand-tracking model.<br>Click above to retry.";
     }
 
-    if (isNoCameraError) {
-      document.getElementById("permissionErrorText").textContent =
-        "No camera was found on this device. Connect a camera and try again.";
-      document.getElementById("permissionError").hidden = false;
-      this._onStatus("error");
-      return;
-    }
-
-    if (isInUseError) {
-      document.getElementById("permissionErrorText").textContent =
-        "The camera couldn't be started — it may be in use by another app. Close other apps using the camera and try again.";
-      document.getElementById("permissionError").hidden = false;
-      this._onStatus("error");
-      return;
-    }
-
-    // Anything else (model failed to load, network hiccup, etc.) is NOT a
-    // permission problem — don't show the misleading "blocked" screen.
     document.getElementById("emptyState").style.display = "flex";
-    document.getElementById("emptyStateText").innerHTML =
-      "Something went wrong starting the camera or model.<br>Click the status button above to retry.";
-    const reason = (err && err.message) ? err.message : "Couldn't start the camera or hand-tracking model.";
+    document.getElementById("emptyStateText").innerHTML = message;
     this._onStatus("error");
-    window.showToast(reason, 3200);
   }
 
   _onStatus(state, message) {
