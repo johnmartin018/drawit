@@ -178,6 +178,22 @@ body{
 }
 .toast.show{ opacity: 1; transform: translate(-50%, 0); }
 
+.debug-panel{
+  position: fixed;
+  top: 64px; right: 8px;
+  max-width: 280px;
+  background: rgba(0,0,0,0.82);
+  color: #9CF29C;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  z-index: 999;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
 /* ===================== Control rail ===================== */
 .control-rail{
   grid-area: rail;
