@@ -75,9 +75,9 @@ export class HandTracker {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user"
+          width: { ideal: 1280, min: 320 },
+          height: { ideal: 720, min: 240 },
+          facingMode: { ideal: "user" }
         },
         audio: false
       });
