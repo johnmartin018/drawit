@@ -98,7 +98,13 @@ export class HandTracker {
     this.running = true;
     const loop = () => {
       if (!this.running) return;
-      this._detectFrame();
+      try {
+        this._detectFrame();
+      } catch (e) {
+        // Never let a single bad frame (canvas readback error, transient
+        // WASM issue, etc.) kill the loop permanently — log and continue.
+        console.error("HandTracker frame error:", e);
+      }
       this._rafId = requestAnimationFrame(loop);
     };
     this._rafId = requestAnimationFrame(loop);
