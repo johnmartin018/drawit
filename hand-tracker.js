@@ -104,6 +104,9 @@ export class HandTracker {
         // Never let a single bad frame (canvas readback error, transient
         // WASM issue, etc.) kill the loop permanently — log and continue.
         console.error("HandTracker frame error:", e);
+        if (typeof window.__pinchDrawLogDebug === "function") {
+          window.__pinchDrawLogDebug(`frame error: ${e && e.message ? e.message : e}`);
+        }
       }
       this._rafId = requestAnimationFrame(loop);
     };
