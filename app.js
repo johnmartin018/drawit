@@ -42,6 +42,45 @@ class App {
     window.addEventListener("resize", () => this._resizeOverlay());
 
     this._bindCameraControls();
+    this._bindDebugPanel();
+
+    ["pause", "stalled", "suspend", "ended", "waiting", "error"].forEach((evt) => {
+      this.video.addEventListener(evt, () => this._logDebug(`video event: ${evt}`));
+    });
+
+    // Surface ANY uncaught error or promise rejection on-screen, since
+    // mobile users often can't easily open dev tools to see console output.
+    window.addEventListener("error", (e) => {
+      this._logDebug(`window error: ${e.message} @ ${e.filename}:${e.lineno}`);
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      this._logDebug(`unhandled rejection: ${e.reason && e.reason.message ? e.reason.message : e.reason}`);
+    });
+  }
+
+  _bindDebugPanel() {
+    this._debugLines = [];
+    this._debugEl = document.getElementById("debugPanel");
+    window.__pinchDrawLogDebug = (line) => this._logDebug(line);
+    let tapCount = 0;
+    let tapTimer = null;
+    document.querySelector(".brand").addEventListener("click", () => {
+      tapCount++;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { tapCount = 0; }, 600);
+      if (tapCount >= 3) {
+        tapCount = 0;
+        this._debugEl.hidden = !this._debugEl.hidden;
+      }
+    });
+  }
+
+  _logDebug(line) {
+    if (!this._debugLines) this._debugLines = [];
+    const ts = new Date().toISOString().slice(11, 19);
+    this._debugLines.push(`[${ts}] ${line}`);
+    if (this._debugLines.length > 12) this._debugLines.shift();
+    if (this._debugEl) this._debugEl.textContent = this._debugLines.join("\n");
   }
 
   async start() {
@@ -192,11 +231,13 @@ class App {
 
   _startPinch() {
     this.isPinching = true;
+    this._logDebug("pinch START");
     this.engine.beginStroke(this.smoothed.x, this.smoothed.y);
   }
 
   _releasePinch() {
     this.isPinching = false;
+    this._logDebug("pinch END");
     this.engine.endStroke();
   }
 
@@ -261,6 +302,15 @@ class App {
     this._fpsTickCounter++;
     if (this._fpsTickCounter % 10 === 0) {
       this._fpsEl.textContent = `${this._frameTimes.length} FPS`;
+      if (this._debugEl && !this._debugEl.hidden) {
+        const v = this.video;
+        this._debugEl.textContent =
+          `fps: ${this._frameTimes.length}\n` +
+          `video: ${v.videoWidth}x${v.videoHeight} readyState=${v.readyState} paused=${v.paused} ended=${v.ended}\n` +
+          `pinching: ${this.isPinching}\n` +
+          `canvas: ${this.drawCanvas.width}x${this.drawCanvas.height}\n` +
+          `--- log ---\n` + (this._debugLines || []).join("\n");
+      }
     }
   }
 }
