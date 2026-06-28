@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>PinchDraw — Draw with a pinch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M16.5 14.5C16.5 17.5 14.2 19.5 11.5 19.5C8.8 19.5 6.5 17.5 6.5 14.5C6.5 11.8 9.5 7.5 11.5 4.5C13.5 7.5 16.5 11.8 16.5 14.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">PinchDraw</span>
+    </div>
+
+    <div class="status-group">
+      <button id="cameraToggleBtn" class="pill-btn" type="button">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Starting camera…</span>
+      </button>
+      <span class="fps-badge" id="fpsBadge">— FPS</span>
+    </div>
+
+    <button id="settingsBtn" class="icon-btn settings-toggle" type="button" aria-label="Open settings" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7H20M4 12H20M4 17H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+
+  <!-- ===== Stage: video + canvas + overlay ===== -->
+  <main class="stage">
+    <video id="webcam" playsinline autoplay muted></video>
+    <canvas id="drawCanvas"></canvas>
+    <canvas id="overlayCanvas"></canvas>
+
+    <div class="empty-state" id="emptyState">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+        <path d="M16.5 14.5C16.5 17.5 14.2 19.5 11.5 19.5C8.8 19.5 6.5 17.5 6.5 14.5C6.5 11.8 9.5 7.5 11.5 4.5C13.5 7.5 16.5 11.8 16.5 14.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg>
+      <p id="emptyStateText">Allow camera access to begin.<br>Pinch your thumb and index finger together to draw.</p>
+    </div>
+
+    <div class="permission-error" id="permissionError" hidden>
+      <p id="permissionErrorText">Camera access was blocked. Check your browser's site settings and reload to try again.</p>
+      <button id="retryCameraBtn" class="ghost-btn" type="button">Try again</button>
+    </div>
+  </main>
+
+  <!-- ===== Bottom-sheet / floating control rail ===== -->
+  <aside class="control-rail" id="controlRail">
+    <div class="rail-handle" id="railHandle" aria-hidden="true"></div>
+
+    <section class="control-group swatches-group">
+      <span class="control-label">Color</span>
+      <div class="swatches" id="swatches">
+        <button class="swatch active" data-color="#2B2825" style="--c:#2B2825" aria-label="Charcoal"></button>
+        <button class="swatch" data-color="#C1654A" style="--c:#C1654A" aria-label="Clay red"></button>
+        <button class="swatch" data-color="#B08D57" style="--c:#B08D57" aria-label="Brass"></button>
+        <button class="swatch" data-color="#7A8B76" style="--c:#7A8B76" aria-label="Sage"></button>
+        <button class="swatch" data-color="#4A6B8A" style="--c:#4A6B8A" aria-label="Slate blue"></button>
+        <button class="swatch" data-color="#FAF7F2" style="--c:#FAF7F2" aria-label="Off-white"></button>
+        <label class="swatch swatch-custom" id="customSwatch" style="--c:#000000">
+          <input type="color" id="customColorInput" value="#2b2825" aria-label="Custom color">
+        </label>
+      </div>
+    </section>
+
+    <section class="control-group">
+      <span class="control-label">Brush size <output id="brushSizeOut">6</output></span>
+      <input type="range" id="brushSize" min="1" max="60" value="6" class="slider">
+    </section>
+
+    <section class="control-group">
+      <span class="control-label">Pinch sensitivity <output id="pinchThreshOut">Medium</output></span>
+      <input type="range" id="pinchThresh" min="1" max="3" step="0.05" value="1.8" class="slider">
+    </section>
+
+    <section class="control-group toggle-row">
+      <button id="eraserBtn" class="tool-btn" type="button" data-active="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 20H8L4.5 16.5C3.7 15.7 3.7 14.4 4.5 13.6L13.6 4.5C14.4 3.7 15.7 3.7 16.5 4.5L20.5 8.5C21.3 9.3 21.3 10.6 20.5 11.4L13.5 18.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Eraser
+      </button>
+      <button id="mirrorBtn" class="tool-btn" type="button" data-active="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3V21M5 7L9 12L5 17M19 7L15 12L19 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Mirror
+      </button>
+    </section>
+
+    <section class="control-group action-row">
+      <button id="undoBtn" class="icon-action" type="button" aria-label="Undo" disabled>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M9 7L4 12L9 17M4 12H14C17.3 12 20 14.7 20 18V19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="redoBtn" class="icon-action" type="button" aria-label="Redo" disabled>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M15 7L20 12L15 17M20 12H10C6.7 12 4 14.7 4 18V19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="clearBtn" class="icon-action danger" type="button" aria-label="Clear canvas">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 7H19M9 7V5C9 4.4 9.4 4 10 4H14C14.6 4 15 4.4 15 5V7M7 7L8 19C8 19.6 8.4 20 9 20H15C15.6 20 16 19.6 16 19L17 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="saveBtn" class="icon-action primary" type="button" aria-label="Save as PNG">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4V15M12 15L8 11M12 15L16 11M5 16V18C5 19.1 5.9 20 7 20H17C18.1 20 19 19.1 19 18V16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </section>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- hand-tracker.js is imported by app.js as an ES module -->
+  <script src="canvas-engine.js"></script>
+  <script src="ui-controller.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
